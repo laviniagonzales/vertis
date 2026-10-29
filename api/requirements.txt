@@ -1,0 +1,4 @@
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pymysql>=1.1
+cryptography>=42      # necessário para o PyMySQL conectar no MySQL 8 (senha caching_sha2)

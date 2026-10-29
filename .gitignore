@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Relógio da simulação (cada um tem o seu)
+api/relogio.json
+
+# Build do Android (Buildozer)
+app/.buildozer/
+app/bin/
+
+# Sistema
+.DS_Store
+Thumbs.db
