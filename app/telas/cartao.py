@@ -20,61 +20,80 @@ Builder.load_string("""
 <TelaCartao>:
     BoxLayout:
         orientation: 'vertical'
-        BoxLayout:
-            size_hint_y: None
-            height: dp(44)
-            padding: dp(16), dp(8), dp(16), 0
-            TextoTitulo:
-                text: 'Meu cartão'
-            TextoPequeno:
+        BarraTopo:
+            titulo: 'Cartão'
+            Label:
                 text: 'arraste para girar'
-                halign: 'right'
+                font_size: sp(11)
+                color: rgba(CORES['texto2'])
+                size_hint_x: None
+                width: self.texture_size[0]
         Cartao3D:
             id: cartao
             size_hint_y: None
-            height: dp(230)
-        BoxLayout:
-            size_hint_y: None
-            height: dp(44)
-            padding: dp(16), 0
-            spacing: dp(10)
-            BotaoContorno:
-                text: 'Virar cartão'
-                on_release: cartao.virar()
-            BotaoContorno:
-                text: root.texto_bloqueio
-                on_release: root.alternar_bloqueio()
-            BotaoContorno:
-                text: 'Nova compra'
-                on_release: root.nova_compra()
+            height: dp(232)
         ScrollView:
             do_scroll_x: False
+            bar_width: dp(3)
             BoxLayout:
                 orientation: 'vertical'
                 size_hint_y: None
                 height: self.minimum_height
-                padding: dp(16), dp(10)
+                padding: dp(16), 0, dp(16), dp(18)
                 spacing: dp(12)
+                GridLayout:
+                    cols: 3
+                    size_hint_y: None
+                    height: dp(86)
+                    AcaoRapida:
+                        icone: 'girar'
+                        texto: 'Virar cartão'
+                        on_release: cartao.virar()
+                    AcaoRapida:
+                        icone: 'cadeado'
+                        texto: root.texto_bloqueio
+                        on_release: root.alternar_bloqueio()
+                    AcaoRapida:
+                        icone: 'sacola'
+                        texto: 'Nova compra'
+                        on_release: root.nova_compra()
                 Painel:
                     orientation: 'vertical'
                     size_hint_y: None
-                    height: dp(130)
+                    height: self.minimum_height
                     TextoPequeno:
                         text: 'Limite disponível'
                     Texto:
-                        text: '[b]' + servidor.reais(servidor.campo(root.limite, 'limite_disponivel', padrao=0)) + '[/b]  de ' + servidor.reais(servidor.campo(root.limite, 'limite_total', padrao=0))
-                        font_size: sp(18)
+                        text: '[b]' + servidor.reais(servidor.campo(root.limite, 'limite_disponivel', padrao=0)) + '[/b]'
+                        font_size: sp(22)
                     BarraProgresso:
-                        valor: root.fracao_uso
-                        cor: rgba(CORES['rosa'])
+                        valor: 1 - root.fracao_uso
                     TextoPequeno:
-                        text: 'Utilizado: ' + servidor.reais(servidor.campo(root.limite, 'limite_utilizado', padrao=0))
-                    TextoPequeno:
-                        text: '[color=#FFE29A]Próximo limite previsto: ' + servidor.reais(servidor.campo(root.limite, 'proximo_limite_previsto', padrao=0)) + '[/color]  (pague em dia!)'
+                        text: 'Utilizado: ' + servidor.reais(servidor.campo(root.limite, 'limite_utilizado', padrao=0)) + '   •   Total: ' + servidor.reais(servidor.campo(root.limite, 'limite_total', padrao=0))
+                    BoxLayout:
+                        size_hint_y: None
+                        height: dp(34)
+                        padding: dp(10), 0
+                        canvas.before:
+                            Color:
+                                rgba: rgba(CORES['amarelo_suave'])
+                            RoundedRectangle:
+                                pos: self.pos
+                                size: self.size
+                                radius: [dp(8)]
+                        Label:
+                            text: 'Próximo limite previsto: [b]' + servidor.reais(servidor.campo(root.limite, 'proximo_limite_previsto', padrao=0)) + '[/b] pagando em dia'
+                            markup: True
+                            font_size: sp(12)
+                            color: rgba(CORES['texto'])
+                            text_size: self.size
+                            halign: 'left'
+                            valign: 'middle'
                 Painel:
                     orientation: 'vertical'
                     size_hint_y: None
-                    height: dp(150)
+                    height: self.minimum_height
+                    spacing: dp(6)
                     TextoPequeno:
                         text: root.titulo_fatura
                     Texto:
@@ -82,15 +101,26 @@ Builder.load_string("""
                         font_size: sp(24)
                     TextoPequeno:
                         text: root.detalhe_fatura
+                    Widget:
+                        size_hint_y: None
+                        height: dp(4)
                     BotaoVertis:
                         text: root.texto_pagar
                         disabled: not root.fatura_pagavel
-                        opacity: 1 if root.fatura_pagavel else 0.4
-                        cor: rgba(CORES['dourado'])
-                        cor_texto: rgba('#1A0E3D')
+                        opacity: 1 if root.fatura_pagavel else 0.45
                         on_release: root.pagar()
-                TextoPequeno:
-                    text: root.lancamentos
+                Painel:
+                    orientation: 'vertical'
+                    size_hint_y: None
+                    height: self.minimum_height if root.lancamentos else 0
+                    opacity: 1 if root.lancamentos else 0
+                    Texto:
+                        text: '[b]Últimos lançamentos[/b]'
+                        font_size: sp(15)
+                    TextoPequeno:
+                        text: root.lancamentos
+                        font_size: sp(13)
+                        line_height: 1.5
         BarraNavegacao:
             atual: 'cartao'
 """)
@@ -141,16 +171,16 @@ class TelaCartao(TelaVertis):
             self.lancamentos = ""
             return
         self._fatura_id = f["id"]
-        situacao = {"aberta": "Fatura aberta", "fechada": "Fatura fechada", "atrasada": "[color=#F87171]Fatura ATRASADA[/color]",
+        situacao = {"aberta": "Fatura aberta", "fechada": "Fatura fechada", "atrasada": "[color=#D33A2C][b]Fatura atrasada[/b][/color]",
                     "paga_parcial": "Fatura paga parcialmente"}[f["status"]]
         self.titulo_fatura = f"{situacao} — {f['mes_referencia']}"
         self.valor_fatura = servidor.reais(float(f["valor_total"]) - float(f["valor_pago"]))
         self.detalhe_fatura = (f"Fecha em {servidor.data_br(f['data_fechamento'])}  •  "
                                f"Vence em {servidor.data_br(f['data_vencimento'])}")
-        self.texto_pagar = "Pagar fatura (em dia = limite sobe!)" if pagar else "Aguardando fechamento"
+        self.texto_pagar = "Pagar fatura" if pagar else "Aguardando fechamento"
         itens = [l for l in f["lancamentos"] if l["tipo"] != "pagamento"][-6:]
-        self.lancamentos = "   Últimos lançamentos:\n" + "\n".join(
-            f"   • {l['descricao']}: {servidor.reais(l['valor'])}" for l in itens) if itens else ""
+        self.lancamentos = "\n".join(
+            f"{l['descricao']}   [b]{servidor.reais(l['valor'])}[/b]" for l in itens) if itens else ""
 
     def pagar(self):
         if not self._fatura_id:
@@ -182,7 +212,7 @@ class TelaCartao(TelaVertis):
                           ao_falhar=lambda m: aviso(m, erro=True))
         abrir_formulario("Simular compra no cartão",
                          [("loja", "Estabelecimento", "texto", "Mercado Bom Preço"),
-                          ("valor", "Valor (R$)", "numero", "89.90"),
+                          ("valor", "Valor", "dinheiro", "89.90"),
                           ("parcelas", "Parcelas", "opcoes:1,2,3,4,5,6,10,12", "1"),
                           ("categoria", "Categoria", "opcoes:Alimentação,Transporte,Saúde,Lazer,Educação,Compras", "Alimentação")],
                          "Comprar", comprar, explicacao="Compra no crédito: usa o limite e entra na fatura.")

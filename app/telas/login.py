@@ -21,31 +21,31 @@ Builder.load_string("""
 
 <LogoVertis@BoxLayout>:
     size_hint: None, None
-    size: dp(220), dp(64)
+    size: dp(200), dp(56)
     spacing: dp(10)
     Widget:
         size_hint_x: None
-        width: dp(44)
+        width: dp(40)
         canvas:
             Color:
-                rgba: rgba(CORES['dourado'])
+                rgba: rgba(CORES['amarelo'])
             RoundedRectangle:
-                pos: self.x, self.y + dp(10)
-                size: dp(10), dp(16)
-                radius: [dp(3)]
+                pos: self.x, self.y + dp(8)
+                size: dp(9), dp(14)
+                radius: [dp(2)]
             RoundedRectangle:
-                pos: self.x + dp(14), self.y + dp(10)
-                size: dp(10), dp(26)
-                radius: [dp(3)]
+                pos: self.x + dp(13), self.y + dp(8)
+                size: dp(9), dp(24)
+                radius: [dp(2)]
             RoundedRectangle:
-                pos: self.x + dp(28), self.y + dp(10)
-                size: dp(10), dp(38)
-                radius: [dp(3)]
+                pos: self.x + dp(26), self.y + dp(8)
+                size: dp(9), dp(36)
+                radius: [dp(2)]
     Label:
         text: '[b]VÉRTIS[/b]'
         markup: True
-        font_size: sp(36)
-        color: 1, 1, 1, 1
+        font_size: sp(32)
+        color: rgba(CORES['texto'])
         halign: 'left'
         text_size: self.size
         valign: 'middle'
@@ -53,42 +53,78 @@ Builder.load_string("""
 <TelaLogin>:
     BoxLayout:
         orientation: 'vertical'
-        padding: dp(26), dp(40), dp(26), dp(24)
+        padding: dp(20), dp(24), dp(20), dp(12)
         spacing: dp(12)
         Widget:
-            size_hint_y: 0.25
+            size_hint_y: 0.18
         AnchorLayout:
             size_hint_y: None
-            height: dp(70)
+            height: dp(60)
             LogoVertis:
         TextoPequeno:
-            text: 'Crescimento vertical: crédito que cresce com você.'
+            text: 'Crédito que cresce com você.'
             halign: 'center'
+            font_size: sp(13)
         Widget:
             size_hint_y: None
-            height: dp(16)
-        Campo:
-            id: cpf
-            hint_text: 'CPF (só números)'
-            input_filter: 'int'
-        Campo:
-            id: senha
-            hint_text: 'Senha'
-            password: True
-            on_text_validate: root.entrar()
-        BotaoVertis:
-            text: 'Entrar'
-            on_release: root.entrar()
+            height: dp(8)
+        Painel:
+            orientation: 'vertical'
+            size_hint_y: None
+            height: self.minimum_height
+            padding: dp(18)
+            spacing: dp(8)
+            Texto:
+                text: '[b]Acesse sua conta[/b]'
+                font_size: sp(17)
+            Widget:
+                size_hint_y: None
+                height: dp(2)
+            Rotulo:
+                text: 'CPF'
+            CampoCPF:
+                id: cpf
+                hint_text: '000.000.000-00'
+            Rotulo:
+                text: 'Senha'
+            Campo:
+                id: senha
+                hint_text: 'Digite sua senha'
+                password: True
+                on_text_validate: root.entrar()
+            Widget:
+                size_hint_y: None
+                height: dp(6)
+            BotaoVertis:
+                text: 'Entrar'
+                on_release: root.entrar()
         BotaoContorno:
-            text: 'Criar minha conta'
+            text: 'Abrir minha conta'
             on_release: app.ir('cadastro', 'left')
-        BotaoContorno:
-            text: 'Cliente de demonstração (Gabriel)'
+        BotaoLink:
+            text: 'Entrar com cliente de demonstração'
             on_release: root.entrar_demo()
         Widget:
         BoxLayout:
             size_hint_y: None
-            height: dp(40) if root.mostrar_servidor else dp(24)
+            height: dp(22)
+            spacing: dp(6)
+            Widget:
+            Icone:
+                icone: 'escudo'
+                size_hint_x: None
+                width: dp(16)
+                cor: rgba(CORES['texto2'])
+            Label:
+                text: 'Ambiente seguro • dados protegidos pela LGPD'
+                font_size: sp(11)
+                color: rgba(CORES['texto2'])
+                size_hint_x: None
+                width: self.texture_size[0]
+            Widget:
+        BoxLayout:
+            size_hint_y: None
+            height: dp(40) if root.mostrar_servidor else dp(26)
             spacing: dp(6)
             TextoPequeno:
                 text: 'Servidor:'
@@ -97,7 +133,8 @@ Builder.load_string("""
                 opacity: 1 if root.mostrar_servidor else 0
             Campo:
                 id: url
-                height: dp(36)
+                height: dp(38)
+                padding: dp(10), dp(10)
                 font_size: sp(12)
                 opacity: 1 if root.mostrar_servidor else 0
                 disabled: not root.mostrar_servidor
@@ -108,6 +145,7 @@ Builder.load_string("""
                 width: dp(70)
                 font_size: sp(11)
                 background_normal: ''
+                background_down: ''
                 background_color: 0, 0, 0, 0
                 color: rgba(CORES['texto2'])
                 on_release: root.salvar_servidor() if root.mostrar_servidor else setattr(root, 'mostrar_servidor', True)
@@ -136,7 +174,7 @@ class TelaLogin(TelaVertis):
         aviso(f"Servidor: {servidor.url_atual()}")
 
     def entrar(self, cpf=None, senha=None):
-        cpf = cpf or self.ids.cpf.text
+        cpf = "".join(c for c in (cpf or self.ids.cpf.text) if c.isdigit())
         senha = senha or self.ids.senha.text
         if not cpf or not senha:
             aviso("Informe CPF e senha", erro=True)

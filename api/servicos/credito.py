@@ -142,9 +142,15 @@ def atualizar_perfil(con, cliente_id: str) -> dict:
 # =====================================================================
 # 3) SCORE INTERNO (0 a 1000) — modelo de pontos, fácil de explicar
 # =====================================================================
-def _pontuar(perfil: dict, renda_declarada, parcelas_em_dia: int, saldos_negativos: int):
+def _pontuar(perfil: dict, renda_declarada, parcelas_em_dia: int, saldos_negativos: int,
+             contas_em_dia: int = 0, contas_atrasadas: int = 0):
     """Começa em 300 e soma/subtrai pontos por comportamento.
-    Devolve (score, fatores_positivos, fatores_negativos)."""
+    Devolve (score, fatores_positivos, fatores_negativos).
+
+    Calibração v2.0: a nota sobe de forma GRADUAL. Cada fatura vale 20 pontos
+    (o máximo só vem com 15 faturas) e o relacionamento vale 5 por mês
+    (o máximo só vem com 2 anos e meio). Assim ninguém chega perto de 1000
+    no primeiro ano, por melhor que seja o comportamento."""
     pos, neg = [], []
 
     def soma(pontos, motivo):
@@ -156,23 +162,23 @@ def _pontuar(perfil: dict, renda_declarada, parcelas_em_dia: int, saldos_negativ
 
     total = 300  # ponto de partida: todo cliente começa com uma chance
     em_dia = perfil["faturas_pagas_em_dia"]
-    total += soma(min(300, 60 * em_dia), f"{em_dia} fatura(s) paga(s) em dia")
+    total += soma(min(300, 20 * em_dia), f"{em_dia} fatura(s) paga(s) em dia")
     total += soma(-min(360, 120 * perfil["faturas_atrasadas"]), f"{perfil['faturas_atrasadas']} fatura(s) atrasada(s)")
     total += soma(-min(150, 2 * perfil["maior_atraso_dias"]), f"Maior atraso: {perfil['maior_atraso_dias']} dias")
-    total += soma(min(100, 10 * perfil["meses_de_relacionamento"]),
+    total += soma(min(150, 5 * perfil["meses_de_relacionamento"]),
                   f"{perfil['meses_de_relacionamento']} mês(es) de relacionamento")
     if perfil["renda_media_comprovada"] > 0:
         total += soma(50, "Renda comprovada pela movimentação da conta")
     if perfil["renda_media_comprovada"] > 0 or (renda_declarada or 0) > 0:
         c = perfil["comprometimento_renda"]
         if c < 30:
-            total += soma(100, f"Baixo comprometimento da renda ({c:.0f}%)")
+            total += soma(60, f"Baixo comprometimento da renda ({c:.0f}%)")
         elif c < 50:
-            total += soma(40, f"Comprometimento moderado da renda ({c:.0f}%)")
+            total += soma(20, f"Comprometimento moderado da renda ({c:.0f}%)")
         else:
             total += soma(-80, f"Renda muito comprometida ({c:.0f}%)")
     if perfil["tem_open_finance"]:
-        total += soma(80, "Open Finance conectado")
+        total += soma(60, "Open Finance conectado")
     if perfil["frequencia_uso_app"] >= 15:
         total += soma(40, "Usa o app com frequência")
     elif perfil["frequencia_uso_app"] >= 5:
@@ -182,6 +188,9 @@ def _pontuar(perfil: dict, renda_declarada, parcelas_em_dia: int, saldos_negativ
         total += soma(50, "Mantém saldo na conta")
     total += soma(min(100, 20 * parcelas_em_dia), f"{parcelas_em_dia} parcela(s) de empréstimo em dia")
     total += soma(-50 * saldos_negativos, f"{saldos_negativos} vez(es) com saldo negativo")
+    # Contas de consumo (luz, água, celular): o histórico que quem nunca teve cartão JÁ TEM
+    total += soma(min(60, 5 * contas_em_dia), f"{contas_em_dia} conta(s) de consumo paga(s) em dia")
+    total += soma(-min(120, 30 * contas_atrasadas), f"{contas_atrasadas} conta(s) de consumo paga(s) com atraso")
 
     return max(0, min(1000, int(total))), pos, neg
 
@@ -206,7 +215,15 @@ def calcular_score(con, cliente_id: str) -> dict:
          WHERE cliente_id = %s AND tipo_evento = 'saldo_negativo' AND ocorrido_em >= %s""",
                              (cliente_id, relogio.agora() - timedelta(days=90)))["n"]
 
-    score, pos, neg = _pontuar(perfil, renda_decl, parcelas_ok, negativos)
+    contas = consultar_um(con, """
+        SELECT COALESCE(SUM(DATE(b.pago_em) <= b.vencimento), 0) AS em_dia,
+               COALESCE(SUM(DATE(b.pago_em) > b.vencimento), 0)  AS atrasadas
+          FROM boletos b JOIN contas c ON c.id = b.conta_id
+         WHERE c.cliente_id = %s AND b.status = 'pago' AND b.eh_conta_consumo = TRUE
+           AND b.pago_em >= %s""", (cliente_id, relogio.agora() - timedelta(days=180)))
+
+    score, pos, neg = _pontuar(perfil, renda_decl, parcelas_ok, negativos,
+                               int(contas["em_dia"]), int(contas["atrasadas"]))
     executar(con, "UPDATE perfil_financeiro SET perfil_risco=%s WHERE cliente_id=%s",
              (risco_por_score(score), cliente_id))
 
@@ -232,11 +249,24 @@ def ultimo_score(con, cliente_id):
 # =====================================================================
 # 4) e 5) REVISÃO DO LIMITE
 # =====================================================================
-def _teto_por_renda(con, cliente_id, perfil) -> Decimal:
-    """Por segurança, o limite nunca passa de 2x a renda (comprovada ou declarada)."""
+# Crédito RESPONSÁVEL: quanto menor a renda, menor o múltiplo permitido.
+# Um limite maior que a renda do mês é a porta de entrada do superendividamento.
+FAIXAS_TETO = [(D(2000), D("1.0")), (D(4000), D("1.5")), (None, D("2.0"))]
+
+
+def renda_de_referencia(con, cliente_id, perfil) -> Decimal:
+    """Renda COMPROVADA (movimentação da conta + Open Finance). A renda só
+    declarada, sem comprovação, vale metade — assim ninguém ganha limite
+    alto só por informar uma renda maior no cadastro."""
     renda_decl = consultar_um(con, "SELECT renda_mensal_declarada AS r FROM clientes WHERE id=%s", (cliente_id,))["r"]
-    renda = max(D(perfil["renda_media_comprovada"] or 0), D(str(renda_decl or 0)))
-    return max(D(500), renda * 2)
+    return max(D(perfil["renda_media_comprovada"] or 0), D(str(renda_decl or 0)) * D("0.5"))
+
+
+def _teto_por_renda(con, cliente_id, perfil) -> Decimal:
+    """Teto do limite: 1x a renda (até R$ 2 mil), 1,5x (até R$ 4 mil), 2x (acima)."""
+    renda = renda_de_referencia(con, cliente_id, perfil)
+    multiplo = next(m for faixa, m in FAIXAS_TETO if faixa is None or renda <= faixa)
+    return max(D(500), _arred(renda * multiplo, 10))
 
 
 def _regras_cumpridas(con, perfil, score, faturas_extra=0, meses_extra=0):

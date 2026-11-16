@@ -51,7 +51,7 @@ class VertisApp(App):
     tela_anterior = None
 
     def build(self):
-        Window.clearcolor = rgba("#0F0824")
+        Window.clearcolor = rgba("#F2F3F5")
         servidor.iniciar(self.user_data_dir)
         self.gerenciador = ScreenManager(transition=SlideTransition(duration=0.25))
         for tela in (TelaLogin(name="login"), TelaCadastro(name="cadastro"), TelaInicio(name="inicio"),

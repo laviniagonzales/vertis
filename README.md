@@ -41,7 +41,8 @@ vertis/
 ├── database/
 │   ├── vertis_schema.sql          ← o script de vocês (só ganhou "SET NAMES utf8mb4" para os acentos)
 │   ├── 02_credenciais.sql     ← tabela NOVA para a senha (ver seção 7)
-│   └── 03_dados_iniciais.sql  ← níveis, regras, conquistas, categorias... (PROPOSTA para ajustar)
+│   ├── 03_dados_iniciais.sql  ← níveis, regras, conquistas, categorias... (PROPOSTA para ajustar)
+│   └── 04_calibracao.sql      ← crédito responsável: regras mais graduais + contas de consumo
 ├── api/
 │   ├── main.py                ← todas as rotas (endereços) da API
 │   ├── config.py              ← ⚠️ coloque aqui a senha do SEU MySQL
@@ -86,6 +87,7 @@ No **MySQL Workbench**: *File → Open SQL Script* e execute (raio ⚡), **nesta
 1. `database/vertis_schema.sql`
 2. `database/02_credenciais.sql`
 3. `database/03_dados_iniciais.sql`
+4. `database/04_calibracao.sql` ← calibração do crédito responsável (ver seção 6)
 
 Confira: `SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='vertis';` → **44**.
 
@@ -172,19 +174,22 @@ Quase tudo fica **no banco** (`03_dados_iniciais.sql`), então dá para mudar **
 15% a 20% da renda declarada (formal = 20%; informal/autônomo/benefício = 15%), **entre R$ 200 e R$ 1.000**.
 Ex.: Gabriel, R$ 2.500 informal → **R$ 350**.
 
-### 6.2 Score interno 0–1000 (código: `credito.py → _pontuar`)
-Modelo de **pontos**, fácil de explicar e transparente (o app mostra cada fator):
+### 6.2 Score interno 0–1000 (código: `credito.py → _pontuar`, modelo v2.0)
+Modelo de **pontos**, fácil de explicar e transparente (o app mostra cada fator).
+Calibrado para subir de forma **gradual**: ninguém chega perto de 1000 no primeiro ano.
 
 | Fator | Pontos |
 |---|---|
 | Ponto de partida (todo cliente) | **300** |
-| Cada fatura paga em dia | +60 (máx. +300) |
+| Cada fatura paga em dia | +20 (máx. +300, só com 15 faturas) |
 | Cada fatura atrasada | −120 (máx. −360) |
 | Maior atraso | −2 por dia (máx. −150) |
-| Meses de relacionamento | +10 por mês (máx. +100) |
+| Meses de relacionamento | +5 por mês (máx. +150) |
 | Renda comprovada pela movimentação | +50 |
-| Comprometimento da renda < 30% / 30–50% / > 50% | +100 / +40 / −80 |
-| Open Finance conectado | +80 |
+| Comprometimento da renda < 30% / 30–50% / > 50% | +60 / +20 / −80 |
+| **Contas de consumo pagas em dia** (luz, água, celular — últimos 6 meses) | +5 cada (máx. +60) |
+| Contas de consumo pagas com atraso | −30 cada (máx. −120) |
+| Open Finance conectado | +60 |
 | Uso do app (15+ ou 5+ acessos/mês) | +40 / +20 |
 | Mantém saldo ≥ 10% da renda | +50 |
 | Cada parcela de empréstimo paga | +20 (máx. +100) |
@@ -192,24 +197,39 @@ Modelo de **pontos**, fácil de explicar e transparente (o app mostra cada fator
 
 Perfil de risco: ≥800 muito baixo • ≥650 baixo • ≥500 médio • ≥350 alto • abaixo muito alto.
 
-### 6.3 Progressão do limite (tabela `regras_progressao_credito`)
+> **Por que contas de consumo?** Quem nunca teve cartão não tem histórico de crédito,
+> mas paga luz, água e celular todo mês. Esse é o histórico que essa pessoa JÁ TEM.
+
+### 6.3 Progressão do limite (tabela `regras_progressao_credito`, ajustada no `04_calibracao.sql`)
 Quando uma fatura é paga **em dia**, o sistema escolhe a regra mais avançada que o cliente cumpre:
 
-| Regra | Score mín. | Faturas em dia | Meses | Aumento | Teto |
+| Regra | Score mín. | Faturas em dia | Meses | Aumento | Teto da etapa |
 |---|---|---|---|---|---|
-| Primeira fatura em dia | 400 | 1 | 0 | +30% | R$ 1.500 |
-| 3 faturas em dia | 500 | 3 | 3 | +50% | R$ 3.500 |
-| 6 faturas em dia | 600 | 6 | 6 | +40% | R$ 6.000 |
-| Cliente de confiança | 750 | 10 | 10 | +30% | R$ 15.000 |
+| Primeira fatura em dia | 400 | 1 | 0 | +20% | R$ 600 |
+| 3 faturas em dia | 480 | 3 | 3 | +15% | R$ 1.500 |
+| 6 faturas em dia | 560 | 6 | 6 | +15% | R$ 4.000 |
+| Cliente de confiança | 700 | 12 | 12 | +12% | R$ 15.000 |
 
-Travas de segurança: o limite nunca passa de **2x a renda**; revisão no máximo a cada 25 dias;
-**atraso reduz 20%** e adia a próxima revisão em 60 dias; Open Finance dá **+20% uma única vez**.
+**Teto por renda (crédito responsável)** — código: `credito.py → _teto_por_renda`:
+
+| Renda de referência | Limite máximo |
+|---|---|
+| até R$ 2.000 | **1x** a renda |
+| até R$ 4.000 | 1,5x a renda |
+| acima de R$ 4.000 | 2x a renda |
+
+A renda de referência é a **comprovada** (entradas na conta + Open Finance). Renda só declarada,
+sem comprovação, vale **metade** — ninguém ganha limite alto só por informar uma renda maior.
+
+Outras travas: revisão no máximo a cada 25 dias; **atraso reduz 20%** e adia a próxima revisão
+em 60 dias; Open Finance dá **+20% uma única vez** (sempre respeitando o teto).
 
 ### 6.4 Gamificação
 - **Níveis** (XP): Semente 0 • Broto 600 • Ascensão 1.500 • VIP Nacional 3.000 • VIP Internacional 5.500 • Vértice 9.000.
   Cada nível multiplica os pontos (1,0x → 2,0x).
-- **Pontuação** (tabela `regras_pontuacao`): fatura em dia = 300 XP + 500 pts + 1.500 milhas;
-  salário = 100 XP + 100 pts; compra = 5 XP + 1 pt por real; acesso diário = 10 XP (1x/dia)...
+- **Pontuação** (tabela `regras_pontuacao`): fatura em dia = 300 XP + 600 pts + 1.500 milhas;
+  salário = 100 XP + 100 pts; meta atingida = 250 XP + 400 pts; acesso diário = 10 XP (1x/dia)...
+  **Compras não dão pontos** (só 2 XP): a Vértis premia pagar em dia e guardar dinheiro, não gastar.
 - **Conquistas** (10): Primeiro Passo, Fatura em Dia, Pagador Pontual (libera Multiplicador de Pontos),
   Fatura em Dia 6x, Salário na Vértis, Cliente Ativo, Open Finance Conectado, Primeira Meta,
   Crédito Responsável e **Nível VIP Nacional → libera a Sala VIP Aeroporto** (como no mockup).
@@ -220,10 +240,18 @@ Taxa pelo perfil de risco: 1,99% (muito baixo) • 2,99% • 3,99% • 5,49% (al
 Parcela pela **Tabela Price**: `PMT = PV × i / (1 − (1+i)^−n)`. CET simplificado (sem IOF).
 Pré-aprovado: até 1,5x a renda comprovada, proporcional ao score.
 
-### Resultado da simulação (cliente Gabriel, pagando tudo em dia)
+### Resultado da simulação — 12 meses, regras reais (`python api/cenarios.py`)
 
-| Mês | Limite | Score | Nível |
-|---|---|---|---|
+| Pessoa | Renda | Limite inicial | Mês 6 | Mês 12 | Score final |
+|---|---|---|---|---|---|
+| Ana, diarista informal, nunca teve cartão | R$ 1.400 | R$ 200 | R$ 540 | **R$ 1.210** (0,9x a renda) | 860 |
+| Gabriel, entregador sem holerite | R$ 2.500 | R$ 350 | R$ 900 | **R$ 2.040** (0,8x) | 860 |
+| Jonas, jovem aprendiz + Open Finance | R$ 1.100 | R$ 200 | R$ 640 | **R$ 1.100** (1,0x = teto) | 920 |
+| Carla, autônoma, atrasou 2 faturas | R$ 1.800 | R$ 250 | R$ 200 | **R$ 350** (0,2x) | 570 |
+
+O script roda tudo dentro de uma transação desfeita no final: **não altera o banco**.
+
+---|---|---|---|
 | início | R$ 350 | 400 | Semente |
 | 1 | R$ 450 | 610 | Broto |
 | 2 | R$ 630 | 680 | Ascensão |

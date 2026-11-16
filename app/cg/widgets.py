@@ -57,7 +57,7 @@ def circulo(cx, cy, r, n=18):
 # Fundo com degradê (tonalização) — usado em todas as telas
 # =====================================================================
 class FundoGradiente(Widget):
-    cores = ListProperty([CORES["fundo_base"], "#1A0E3D", CORES["fundo_topo"]])
+    cores = ListProperty([CORES["fundo_base"], "#F5F6F8", CORES["fundo_topo"]])
 
     def __init__(self, **kw):
         super().__init__(**kw)
@@ -160,7 +160,7 @@ class TrilhaAscensao(Widget):
             # nós da trilha (cada mudança de limite)
             for i, (px, py) in enumerate(hist):
                 r = dp(5) if i < len(hist) - 1 else dp(7)
-                Color(*rgba(CORES["dourado"] if i == len(hist) - 1 else CORES["lilas"]))
+                Color(*rgba(CORES["dourado"] if i == len(hist) - 1 else CORES["cinza_medio"]))
                 Ellipse(pos=(self.x + px - r, self.y + py - r), size=(2 * r, 2 * r))
                 Color(1, 1, 1, 1)
                 Ellipse(pos=(self.x + px - r / 2.4, self.y + py - r / 2.4), size=(r / 1.2, r / 1.2))
@@ -202,9 +202,9 @@ class TrilhaAscensao(Widget):
         M = tf.compor(tf.translacao2d(cx, cy + dp(4)), tf.escala2d(dp(1.25)))
         corpo = tf.aplicar2d(M, [(-6, 0), (6, 0), (5.5, 8), (3, 10), (-3, 10), (-5.5, 8)])
         cabeca = tf.aplicar2d(M, circulo(0, 14.5, 4.2, 16))
-        g.add(Color(*rgba("#60A5FA")))
+        g.add(Color(*rgba(CORES["grafite"])))
         g.add(malha_poligono(corpo))
-        g.add(Color(*rgba("#FDE68A")))
+        g.add(Color(*rgba(CORES["amarelo"])))
         g.add(malha_poligono(cabeca))
 
 
@@ -285,7 +285,7 @@ class AnelCredito(Widget):
     antialias = BooleanProperty(True)
     abertura = NumericProperty(360)
     inicio = NumericProperty(90)
-    cores = ListProperty(["#A78BFA", "#EC4899", "#F5B83D"])
+    cores = ListProperty(["#F2C230", "#F5B700", "#D99A00"])
     espessura = NumericProperty(dp(7))
 
     def __init__(self, **kw):
@@ -300,7 +300,7 @@ class AnelCredito(Widget):
         lado = int(min(self.width, self.height))
         if lado < 8:
             return
-        img = raster.rasterizar_anel(lado, self.espessura, self.fracao, "#3B2A66", self.cores,
+        img = raster.rasterizar_anel(lado, self.espessura, self.fracao, CORES["cinza_claro"], self.cores,
                                      self.antialias, self.inicio, self.abertura)
         self._ret.texture = raster.para_textura(img)
         self._ret.size = (lado, lado)
@@ -327,7 +327,7 @@ class Medalha(Widget):
         lado = int(min(self.width, self.height))
         if lado < 8:
             return
-        cor = self.cor if self.ativa else "#4B4466"
+        cor = self.cor if self.ativa else "#D5D9DF"
         img = raster.esfera_iluminada(lado, cor, luz=(self.luz_x, 0.6, 0.7), brilho_especular=0.8 if self.ativa else 0.2)
         self._ret.texture = raster.para_textura(img)
         self._ret.size = (lado, lado)

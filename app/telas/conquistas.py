@@ -58,7 +58,7 @@ Builder.load_string("""
         orientation: 'vertical'
         spacing: dp(3)
         Texto:
-            text: '[b]' + root.nome + '[/b]' + ('  [color=#34D399]conquistada![/color]' if root.ativa else '')
+            text: '[b]' + root.nome + '[/b]' + ('   [color=#1E8E4E]conquistada[/color]' if root.ativa else '')
         TextoPequeno:
             text: root.descricao
             font_size: sp(11)
@@ -74,27 +74,28 @@ Builder.load_string("""
 <TelaConquistas>:
     BoxLayout:
         orientation: 'vertical'
-        BoxLayout:
-            size_hint_y: None
-            height: dp(46)
-            padding: dp(16), dp(8), dp(16), 0
-            TextoTitulo:
-                text: 'Conquistas'
-            BotaoContorno:
+        BarraTopo:
+            titulo: 'Pontos e conquistas'
+            BotaoVertis:
                 text: 'Trocar pontos'
+                font_size: sp(13)
                 size_hint: None, None
-                size: dp(120), dp(32)
+                size: dp(122), dp(36)
+                pos_hint: {'center_y': .5}
                 on_release: root.trocar()
         BoxLayout:
-            id: niveis
+            orientation: 'vertical'
             size_hint_y: None
-            height: dp(108)
-            padding: dp(10), dp(4)
-            spacing: dp(4)
-        TextoPequeno:
-            text: '   ' + root.saldos
-            size_hint_y: None
-            height: dp(22)
+            height: dp(150)
+            padding: dp(16), dp(12), dp(16), dp(4)
+            spacing: dp(6)
+            Painel:
+                id: niveis
+                orientation: 'horizontal'
+                padding: dp(6), dp(8)
+                spacing: dp(4)
+            TextoPequeno:
+                text: root.saldos
         ScrollView:
             do_scroll_x: False
             BoxLayout:
@@ -110,7 +111,7 @@ Builder.load_string("""
 
 
 class NivelMini(BoxLayout):
-    cor = StringProperty("#A78BFA")
+    cor = StringProperty("#F5B700")
     ativa = BooleanProperty(True)
     atual = BooleanProperty(False)
     nome = StringProperty("")
@@ -118,7 +119,7 @@ class NivelMini(BoxLayout):
 
 
 class LinhaConquista(Painel):
-    cor = StringProperty("#F5B83D")
+    cor = StringProperty("#F5B700")
     ativa = BooleanProperty(False)
     nome = StringProperty("")
     descricao = StringProperty("")
@@ -153,7 +154,7 @@ class TelaConquistas(TelaVertis):
             for b in self.resumo["beneficios"]:
                 extra = f"  •  código {b['codigo_voucher']}" if b.get("codigo_voucher") else ""
                 usos = f"  •  {b['usos_restantes']} uso(s) no mês" if b.get("usos_restantes") else ""
-                lista.add_widget(Factory.TextoPequeno(text=f"[color=#FFE29A]•[/color] {b['nome']}{extra}{usos}"))
+                lista.add_widget(Factory.TextoPequeno(text=f"[color=#D99A00]•[/color] {b['nome']}{extra}{usos}"))
         lista.add_widget(Factory.Texto(text="[b]Conquistas[/b]"))
         for c in r["conquistas"]:
             premio = f"+{servidor.milhar(c['pontos_recompensa'])} pontos"

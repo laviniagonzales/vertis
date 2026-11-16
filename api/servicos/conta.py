@@ -119,6 +119,30 @@ def receber(con, cliente_id, valor, de_nome, de_documento=None, eh_salario=False
     return t
 
 
+# ---------------------------------------------------------------- contas de consumo (boletos)
+CONTAS_CONSUMO = ["Energia elétrica", "Água e esgoto", "Celular / internet", "Gás"]
+
+
+def pagar_conta(con, cliente_id, beneficiario, valor, vencimento=None, eh_conta_consumo=True) -> dict:
+    """Paga um boleto (luz, água, celular...) com o saldo da conta.
+    Conta de consumo paga em dia conta a favor do score: é o histórico
+    que quem nunca teve cartão de crédito já tem."""
+    from servicos import credito                     # import aqui para evitar import circular
+    conta = conta_do_cliente(con, cliente_id)
+    hoje = relogio.hoje()
+    vencimento = vencimento or hoje
+    linha = "".join(str(random.randint(0, 9)) for _ in range(47))
+    t = lancar(con, conta["id"], "pagamento_boleto", "saida", valor, f"Conta paga: {beneficiario}",
+               categoria="Moradia", contraparte_nome=beneficiario)
+    boleto_id = inserir(con, "boletos", {
+        "conta_id": conta["id"], "linha_digitavel": linha, "beneficiario": beneficiario,
+        "eh_conta_consumo": eh_conta_consumo, "valor": D(str(valor)), "vencimento": vencimento,
+        "status": "pago", "pago_em": relogio.agora(), "transacao_id": t["id"]})
+    credito.atualizar_perfil(con, cliente_id)
+    score = credito.calcular_score(con, cliente_id)
+    return {"boleto_id": boleto_id, "em_dia": hoje <= vencimento, "score": score["score_interno"]}
+
+
 def chaves(con, cliente_id):
     return consultar(con, """SELECT cp.tipo_chave, cp.valor_chave FROM chaves_pix cp
                               JOIN contas c ON c.id = cp.conta_id

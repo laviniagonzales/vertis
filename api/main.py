@@ -94,6 +94,12 @@ class PixRecebimento(BaseModel):
     eh_salario: bool = False
 
 
+class ContaConsumo(BaseModel):
+    beneficiario: str = "Energia elétrica"
+    valor: float = Field(gt=0)
+    vencimento: date | None = None
+
+
 class Compra(BaseModel):
     valor: float = Field(gt=0)
     estabelecimento: str
@@ -188,6 +194,16 @@ def pix_enviar(dados: PixEnvio, cid: str = Depends(cliente_logado)):
     with conexao() as con:
         try:
             return conta.pix_enviar(con, cid, dados.chave, dados.valor, dados.descricao)
+        except conta.SaldoInsuficiente as e:
+            raise HTTPException(400, str(e))
+
+
+@app.post("/contas/pagar", tags=["Conta"])
+def pagar_conta(dados: ContaConsumo, cid: str = Depends(cliente_logado)):
+    """Paga uma conta de consumo (luz, água, celular). Paga em dia, ela ajuda o score."""
+    with conexao() as con:
+        try:
+            return conta.pagar_conta(con, cid, dados.beneficiario, dados.valor, dados.vencimento)
         except conta.SaldoInsuficiente as e:
             raise HTTPException(400, str(e))
 

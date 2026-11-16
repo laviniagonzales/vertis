@@ -35,12 +35,8 @@ Builder.load_string("""
 <TelaLab>:
     BoxLayout:
         orientation: 'vertical'
-        BoxLayout:
-            size_hint_y: None
-            height: dp(46)
-            padding: dp(16), dp(8), dp(16), 0
-            TextoTitulo:
-                text: 'Laboratório de CG'
+        BarraTopo:
+            titulo: 'Laboratório de CG'
         ScrollView:
             do_scroll_x: False
             BoxLayout:
@@ -74,12 +70,12 @@ Builder.load_string("""
                         BotaoVertis:
                             text: 'Serrilhado'
                             height: dp(40)
-                            cor: rgba(CORES['roxo']) if grade.modo == 'serrilhado' else rgba('#3B2A66')
+                            cor: rgba(CORES['amarelo']) if grade.modo == 'serrilhado' else rgba(CORES['cinza_claro'])
                             on_release: grade.modo = 'serrilhado'
                         BotaoVertis:
                             text: 'Suave (antialiasing)'
                             height: dp(40)
-                            cor: rgba(CORES['roxo']) if grade.modo == 'suave' else rgba('#3B2A66')
+                            cor: rgba(CORES['amarelo']) if grade.modo == 'suave' else rgba(CORES['cinza_claro'])
                             on_release: grade.modo = 'suave'
 
                 Secao:
@@ -164,9 +160,9 @@ class GradePixels(Widget):
         x1 = x0 + comp * math.cos(math.radians(self.angulo))
         y1 = y0 + comp * math.sin(math.radians(self.angulo))
         img = np.zeros((L, C, 4), np.uint8)
-        img[..., :3] = (34, 22, 74)
+        img[..., :3] = (43, 47, 54)
         img[..., 3] = 255
-        cor = np.array([245, 184, 61])
+        cor = np.array([245, 183, 0])
         if self.modo == "serrilhado":
             for px, py in raster.bresenham(int(x0), int(y0), int(round(x1)), int(round(y1))):
                 if 0 <= px < C and 0 <= py < L:
@@ -248,14 +244,14 @@ class DemoRecorte(Widget):
         self.info = f"P0 = {c0:04b}   P1 = {c1:04b}   »  {resultado}"
         self.canvas.clear()
         with self.canvas:
-            Color(*rgba("#1A0F3D"))
+            Color(*rgba(CORES["grafite"]))
             Rectangle(pos=self.pos, size=self.size)
-            Color(*rgba(CORES["lilas"], 0.25))           # as 9 regiões
+            Color(1, 1, 1, 0.25)           # as 9 regiões
             for x in (xmin, xmax):
                 Line(points=[x, self.y, x, self.top], width=1, dash_length=4, dash_offset=4)
             for y in (ymin, ymax):
                 Line(points=[self.x, y, self.right, y], width=1, dash_length=4, dash_offset=4)
-            Color(*rgba(CORES["lilas"]))                 # a janela de recorte
+            Color(1, 1, 1, 0.9)                          # a janela de recorte
             Line(rectangle=(xmin, ymin, xmax - xmin, ymax - ymin), width=1.6)
             Color(1, 1, 1, 0.25)                         # linha original (invisível na prática)
             Line(points=[ax, ay, bx, by], width=1, dash_length=6, dash_offset=4)
@@ -263,7 +259,7 @@ class DemoRecorte(Widget):
                 Color(*rgba(CORES["dourado"]))           # parte visível
                 Line(points=list(r), width=dp(2.2))
             for (px, py) in ((ax, ay), (bx, by)):
-                Color(*rgba(CORES["rosa"]))
+                Color(*rgba("#FFD24D"))
                 Line(circle=(px, py, dp(7)), width=dp(1.5))
 
 

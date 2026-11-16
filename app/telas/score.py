@@ -26,17 +26,9 @@ Builder.load_string("""
 <TelaScore>:
     BoxLayout:
         orientation: 'vertical'
-        BoxLayout:
-            size_hint_y: None
-            height: dp(46)
-            padding: dp(16), dp(8), dp(16), 0
-            BotaoContorno:
-                text: '< Voltar'
-                size_hint: None, None
-                size: dp(84), dp(32)
-                on_release: app.ir(app.tela_anterior or 'inicio', 'right')
-            TextoTitulo:
-                text: '  Meu score'
+        BarraTopo:
+            titulo: 'Meu score'
+            voltar: True
         FloatLayout:
             size_hint_y: None
             height: dp(190)
@@ -48,10 +40,11 @@ Builder.load_string("""
                 inicio: 210
                 abertura: 240
                 espessura: dp(14)
-                cores: ['#F87171', '#F5B83D', '#34D399']
+                cores: ['#D33A2C', '#F5B700', '#1E8E4E']
             Label:
                 text: '[b]' + str(root.score) + '[/b]'
                 markup: True
+                color: rgba(CORES['texto'])
                 font_size: sp(44)
                 pos_hint: {'center_x': .5, 'center_y': .56}
                 size_hint: None, None
@@ -71,9 +64,8 @@ Builder.load_string("""
             BotaoVertis:
                 text: 'Open Finance'
                 on_release: root.open_finance()
-            BotaoVertis:
+            BotaoSecundario:
                 text: 'Empréstimo'
-                cor: rgba('#4C3A99')
                 on_release: root.emprestimo()
         ScrollView:
             do_scroll_x: False
@@ -103,11 +95,11 @@ class TelaScore(TelaVertis):
         T, P = Factory.Texto, Factory.TextoPequeno
         lista.add_widget(T(text="[b]O que ajudou sua nota[/b]"))
         for f in atual["fatores_positivos"] or []:
-            lista.add_widget(P(text=f"[color=#34D399]+{f['pontos']}[/color]   {f['fator']}"))
+            lista.add_widget(P(text=f"[color=#1E8E4E][b]+{f['pontos']}[/b][/color]   {f['fator']}"))
         if atual["fatores_negativos"]:
             lista.add_widget(T(text="[b]O que puxou para baixo[/b]"))
             for f in atual["fatores_negativos"]:
-                lista.add_widget(P(text=f"[color=#F87171]{f['pontos']}[/color]   {f['fator']}"))
+                lista.add_widget(P(text=f"[color=#D33A2C][b]{f['pontos']}[/b][/color]   {f['fator']}"))
         lista.add_widget(P(text=f"(todo cliente começa com 300 pontos • modelo {atual['versao_modelo']})"))
         lista.add_widget(T(text="[b]Seu perfil[/b]"))
         lista.add_widget(P(text=f"Renda comprovada: {servidor.reais(perfil['renda_media_comprovada'])}/mês  •  "
@@ -161,7 +153,7 @@ class TelaScore(TelaVertis):
             servidor.post("/emprestimos/simular", {"valor": numero(v["valor"]), "parcelas": int(numero(v["parcelas"], 6)),
                                                    "finalidade": v["finalidade"]},
                           ao_receber=proposta, ao_falhar=lambda m: aviso(m, erro=True))
-        abrir_formulario("Simular empréstimo", [("valor", "Quanto você precisa? (R$)", "numero", "1000"),
+        abrir_formulario("Simular empréstimo", [("valor", "Quanto você precisa?", "dinheiro", "1000"),
                                                 ("parcelas", "Parcelas", "opcoes:3,6,10,12,18,24", "6"),
                                                 ("finalidade", "Para quê?", "opcoes:Quitar dívida,Capital de giro,Estudos,Emergência", "Quitar dívida")],
                          "Simular", simular)

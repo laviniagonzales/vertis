@@ -70,7 +70,7 @@ class Cartao3D(Widget):
     def _criar_texturas(self):
         W, H = 640, 404
         d = self.dados
-        fundo = raster.para_textura(raster.gradiente_diagonal(64, 40, ["#3B0E8C", "#7C3AED", "#DB2777"]))
+        fundo = raster.para_textura(raster.gradiente_diagonal(64, 40, ["#1C1F24", "#2E333B", "#3D434C"]))
         frente = Fbo(size=(W, H))
         with frente:
             ClearColor(0, 0, 0, 0)
@@ -87,7 +87,7 @@ class Cartao3D(Widget):
             t = _texto("VÉRTIS", 42, True)
             Color(1, 1, 1, 1)
             Rectangle(texture=t, pos=(95, H - 82), size=t.size)
-            t = _texto(d.get("nivel", "Semente").upper(), 20, True, rgba(CORES["dourado_claro"]))
+            t = _texto(d.get("nivel", "Semente").upper(), 20, True, rgba("#FFD24D"))
             Rectangle(texture=t, pos=(W - t.width - 40, H - 72), size=t.size)
             # chip
             Color(*rgba("#E9C46A"))
@@ -124,7 +124,7 @@ class Cartao3D(Widget):
             t = _texto("CVV •••", 22, True, (0.1, 0.1, 0.2, 1))
             Color(1, 1, 1, 1)
             Rectangle(texture=t, pos=(460, H - 190), size=t.size)
-            t = _texto(f"Limite atual: {d.get('limite', '')}", 26, True, rgba(CORES["dourado_claro"]))
+            t = _texto(f"Limite atual: {d.get('limite', '')}", 26, True, rgba("#FFD24D"))
             Rectangle(texture=t, pos=(40, 110), size=t.size)
             t = _texto("Crédito progressivo: pague em dia e seu limite cresce.", 18, False, (1, 1, 1, 0.85))
             Rectangle(texture=t, pos=(40, 70), size=t.size)
@@ -246,7 +246,7 @@ class Cartao3D(Widget):
             Ellipse(pos=(self.center_x - LARG * escala * 0.45, self.y + dp(2)), size=(LARG * escala * 0.9, dp(14)))
             for _, tipo, (p2, uv, (luz, brilho)) in faces:
                 if self.aramado:
-                    Color(*rgba(CORES["lilas"]))
+                    Color(*rgba(CORES["amarelo"]))
                     Line(points=[*p2[0], *p2[1], *p2[2], *p2[3], *p2[0], *p2[2]], width=1)
                     continue
                 if tipo == "lateral":

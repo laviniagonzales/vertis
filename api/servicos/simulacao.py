@@ -7,6 +7,7 @@ um MÊS de vida financeira em poucos segundos, avançando o relógio dia a dia:
    dia 5   → recebe o salário via Pix          (evento salario_recebido)
    dia 6   → guarda R$ 300 na meta             (pode gerar meta_atingida)
    dia 7   → paga o aluguel via Pix
+   dia 10  → paga luz, água e celular (contas de consumo → ajudam o score)
    vários  → compras no cartão                 (evento compra_realizada)
    todo dia→ abre o app (quase sempre)         (evento acesso_app)
    fatura  → fecha 7 dias antes do vencimento; ele paga 2 dias antes
@@ -16,6 +17,7 @@ Com comportamento="atrasa", ele paga a fatura 5 dias DEPOIS do vencimento,
 para mostrar o lado negativo (limite reduzido, score cai).
 """
 import random
+from datetime import timedelta
 from decimal import Decimal
 
 import relogio
@@ -97,6 +99,14 @@ def simular_mes(con, cliente_id, comportamento="em_dia", dias=30) -> dict:
                                      "Aluguel")
             except conta_srv.SaldoInsuficiente:
                 pass
+
+        if hoje.day == 10:   # contas de consumo (luz, água, celular), pagas no vencimento
+            for nome, fracao in (("Energia elétrica", "0.06"), ("Água e esgoto", "0.03"), ("Celular / internet", "0.03")):
+                try:
+                    venc = hoje if comportamento == "em_dia" else hoje - timedelta(days=5)
+                    conta_srv.pagar_conta(con, cliente_id, nome, (renda * D(fracao)).quantize(D("0.01")), venc)
+                except conta_srv.SaldoInsuficiente:
+                    pass
 
         if dia in dias_compra:
             lim = consultar_um(con, "SELECT limite_total, limite_disponivel FROM limites_credito WHERE cliente_id=%s",

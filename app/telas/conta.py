@@ -22,13 +22,23 @@ Builder.load_string("""
 
 <LinhaExtrato>:
     size_hint_y: None
-    height: dp(54)
-    spacing: dp(10)
-    padding: dp(4), dp(4)
+    height: dp(60)
+    spacing: dp(12)
+    padding: 0, dp(6)
+    canvas.after:
+        Color:
+            rgba: rgba(CORES['borda'])
+        Line:
+            points: self.x + dp(48), self.y, self.right, self.y
     Widget:
         size_hint_x: None
-        width: dp(10)
+        width: dp(36)
         canvas:
+            Color:
+                rgba: rgba(CORES['cinza_claro'])
+            Ellipse:
+                pos: self.center_x - dp(18), self.center_y - dp(18)
+                size: dp(36), dp(36)
             Color:
                 rgba: rgba(root.cor_categoria)
             Ellipse:
@@ -49,7 +59,7 @@ Builder.load_string("""
         font_size: sp(14)
         color: rgba(CORES['verde']) if root.entrada else rgba(CORES['texto'])
         size_hint_x: None
-        width: dp(104)
+        width: dp(108)
         text_size: self.size
         halign: 'right'
         valign: 'middle'
@@ -57,62 +67,72 @@ Builder.load_string("""
 <TelaConta>:
     BoxLayout:
         orientation: 'vertical'
-        BoxLayout:
-            orientation: 'vertical'
-            size_hint_y: None
-            height: dp(260)
-            padding: dp(16), dp(14), dp(16), dp(6)
-            spacing: dp(10)
-            TextoTitulo:
-                text: 'Minha conta'
-            Painel:
-                orientation: 'vertical'
-                size_hint_y: None
-                height: dp(104)
-                TextoPequeno:
-                    text: 'Saldo disponível'
-                Label:
-                    text: servidor.reais(servidor.campo(root.dados, 'saldo', padrao=0))
-                    font_size: sp(30)
-                    bold: True
-                    text_size: self.size
-                    halign: 'left'
-                    valign: 'middle'
-                TextoPequeno:
-                    text: 'Agência ' + servidor.campo(root.dados, 'agencia', padrao='') + '  •  Conta ' + servidor.campo(root.dados, 'numero', padrao='') + '  •  Pix: ' + root.chave
-                    font_size: sp(11)
-            GridLayout:
-                cols: 2
-                spacing: dp(10)
-                size_hint_y: None
-                height: dp(98)
-                BotaoVertis:
-                    text: 'Enviar Pix'
-                    on_release: root.enviar_pix()
-                BotaoVertis:
-                    text: 'Receber (simular)'
-                    cor: rgba('#4C3A99')
-                    on_release: root.receber()
-                BotaoVertis:
-                    text: 'Minhas metas'
-                    cor: rgba('#4C3A99')
-                    on_release: root.metas()
-                BotaoVertis:
-                    text: 'Meu score'
-                    cor: rgba('#4C3A99')
-                    on_release: app.ir('score')
-        TextoPequeno:
-            text: '   Extrato'
-            size_hint_y: None
-            height: dp(22)
+        BarraTopo:
+            titulo: 'Conta'
         ScrollView:
             do_scroll_x: False
+            bar_width: dp(3)
             BoxLayout:
-                id: lista
                 orientation: 'vertical'
                 size_hint_y: None
                 height: self.minimum_height
-                padding: dp(14), 0
+                padding: dp(16), dp(14), dp(16), dp(18)
+                spacing: dp(12)
+                Painel:
+                    orientation: 'vertical'
+                    size_hint_y: None
+                    height: dp(118)
+                    spacing: dp(2)
+                    TextoPequeno:
+                        text: 'Saldo disponível'
+                    Label:
+                        text: servidor.reais(servidor.campo(root.dados, 'saldo', padrao=0))
+                        font_size: sp(28)
+                        bold: True
+                        color: rgba(CORES['texto'])
+                        text_size: self.size
+                        halign: 'left'
+                        valign: 'middle'
+                    TextoPequeno:
+                        text: 'Agência ' + servidor.campo(root.dados, 'agencia', padrao='') + '  •  Conta ' + servidor.campo(root.dados, 'numero', padrao='')
+                        font_size: sp(11)
+                    TextoPequeno:
+                        text: ('Chave Pix: ' + root.chave) if root.chave else ''
+                        font_size: sp(11)
+                GridLayout:
+                    cols: 4
+                    size_hint_y: None
+                    height: dp(86)
+                    AcaoRapida:
+                        icone: 'pix'
+                        texto: 'Enviar Pix'
+                        on_release: root.enviar_pix()
+                    AcaoRapida:
+                        icone: 'receber'
+                        texto: 'Receber'
+                        on_release: root.receber()
+                    AcaoRapida:
+                        icone: 'metas'
+                        texto: 'Metas'
+                        on_release: root.metas()
+                    AcaoRapida:
+                        icone: 'fatura'
+                        texto: 'Pagar conta'
+                        on_release: root.pagar_conta()
+                Painel:
+                    orientation: 'vertical'
+                    size_hint_y: None
+                    height: self.minimum_height
+                    spacing: 0
+                    Texto:
+                        text: '[b]Extrato[/b]'
+                        font_size: sp(15)
+                    BoxLayout:
+                        id: lista
+                        orientation: 'vertical'
+                        size_hint_y: None
+                        height: self.minimum_height
+                        padding: 0, dp(6), 0, 0
         BarraNavegacao:
             atual: 'conta'
 """)
@@ -161,7 +181,7 @@ class TelaConta(TelaVertis):
 
     def enviar_pix(self):
         abrir_formulario("Enviar Pix", [("chave", "Chave Pix (CPF, e-mail...)", "texto", ""),
-                                        ("valor", "Valor (R$)", "numero", ""),
+                                        ("valor", "Valor", "dinheiro", ""),
                                         ("descricao", "Descrição (opcional)", "texto", "")], "Enviar",
                          lambda v: servidor.post("/pix/enviar", {"chave": v["chave"], "valor": numero(v["valor"]),
                                                                  "descricao": v["descricao"] or None},
@@ -169,8 +189,21 @@ class TelaConta(TelaVertis):
                                                  ao_falhar=lambda m: aviso(m, erro=True)),
                          explicacao="Se a chave for de outro cliente Vértis, o dinheiro cai na conta dele na hora.")
 
+    def pagar_conta(self):
+        def pagar(v):
+            servidor.post("/contas/pagar", {"beneficiario": v["beneficiario"], "valor": numero(v["valor"])},
+                          ao_receber=lambda r: (aviso(f"Conta paga em dia! Seu score agora é {r['score']}."),
+                                                self.carregar()),
+                          ao_falhar=lambda m: aviso(m, erro=True))
+        abrir_formulario("Pagar conta", [("beneficiario", "Qual conta?",
+                                          "opcoes:Energia elétrica,Água e esgoto,Celular / internet,Gás",
+                                          "Energia elétrica"),
+                                         ("valor", "Valor", "dinheiro", "120")], "Pagar", pagar,
+                         explicacao="Contas de luz, água e celular pagas em dia ajudam o seu score: "
+                                    "é o histórico que você já tem, mesmo sem nunca ter tido cartão.")
+
     def receber(self):
-        abrir_formulario("Simular recebimento", [("valor", "Valor (R$)", "numero", "2500"),
+        abrir_formulario("Simular recebimento", [("valor", "Valor", "dinheiro", "2500"),
                                                  ("de_nome", "Quem enviou", "texto", "Plataforma de Entregas"),
                                                  ("eh_salario", "É o meu salário", "sim_nao", True)], "Receber",
                          lambda v: servidor.post("/pix/simular-recebimento",
@@ -185,7 +218,7 @@ class TelaConta(TelaVertis):
         def mostrar(lista):
             if not lista:
                 abrir_formulario("Nova meta", [("nome", "Nome da meta", "texto", "Reserva de emergência"),
-                                               ("alvo", "Valor alvo (R$)", "numero", "1500")], "Criar",
+                                               ("alvo", "Valor alvo", "dinheiro", "1500")], "Criar",
                                  lambda v: servidor.post("/metas", {"nome": v["nome"], "valor_alvo": numero(v["alvo"])},
                                                          ao_receber=self._depois("Meta criada!"),
                                                          ao_falhar=lambda m: aviso(m, erro=True)))
@@ -196,7 +229,7 @@ class TelaConta(TelaVertis):
             if m["status"] != "ativa":
                 aviso(texto)
                 return
-            abrir_formulario("Guardar dinheiro", [("valor", "Quanto guardar (R$)", "numero", "100")], "Guardar",
+            abrir_formulario("Guardar dinheiro", [("valor", "Quanto guardar", "dinheiro", "100")], "Guardar",
                              lambda v: servidor.post(f"/metas/{m['id']}/aportar", {"valor": numero(v["valor"])},
                                                      ao_receber=self._depois("Guardado na meta!"),
                                                      ao_falhar=lambda e: aviso(e, erro=True)),

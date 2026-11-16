@@ -21,12 +21,6 @@ Builder.load_string("""
 #:import CORES tema.CORES
 #:import servidor servidor
 
-<Chip@Painel>:
-    size_hint: None, None
-    padding: dp(8), dp(6)
-    spacing: dp(8)
-    cor_fundo: rgba('#2A1A5E', 0.92)
-
 <MedalhaRotulo>:
     orientation: 'vertical'
     spacing: dp(2)
@@ -42,196 +36,290 @@ Builder.load_string("""
         text_size: self.width, None
         halign: 'center'
 
+<CabecalhoCartao@BoxLayout>:
+    icone: ''
+    titulo: ''
+    acao: ''
+    size_hint_y: None
+    height: dp(26)
+    spacing: dp(10)
+    Icone:
+        icone: root.icone
+        size_hint_x: None
+        width: dp(20)
+    Label:
+        text: '[b]' + root.titulo + '[/b]'
+        markup: True
+        font_size: sp(15)
+        color: rgba(CORES['texto'])
+        text_size: self.size
+        halign: 'left'
+        valign: 'middle'
+    Label:
+        text: root.acao
+        font_size: sp(12)
+        bold: True
+        color: rgba(CORES['dourado_claro'])
+        size_hint_x: None
+        width: self.texture_size[0]
+    Icone:
+        icone: 'seta'
+        size_hint_x: None
+        width: dp(14)
+        cor: rgba(CORES['texto2'])
+
+<PainelToque@ButtonBehavior+Painel>:
+    orientation: 'vertical'
+    size_hint: None, None
+    pos_hint: {'center_x': .5}
+    height: self.minimum_height
+    spacing: dp(6)
+
 <TelaInicio>:
     BoxLayout:
         orientation: 'vertical'
-        # -------------------------------------------------- cabeçalho
-        BoxLayout:
-            size_hint_y: None
-            height: dp(50)
-            padding: dp(14), dp(6)
-            spacing: dp(8)
-            Widget:
-                size_hint_x: None
-                width: dp(26)
-                canvas:
-                    Color:
-                        rgba: rgba(CORES['dourado'])
-                    RoundedRectangle:
-                        pos: self.x, self.center_y - dp(9)
-                        size: dp(6), dp(10)
-                        radius: [dp(2)]
-                    RoundedRectangle:
-                        pos: self.x + dp(8), self.center_y - dp(9)
-                        size: dp(6), dp(15)
-                        radius: [dp(2)]
-                    RoundedRectangle:
-                        pos: self.x + dp(16), self.center_y - dp(9)
-                        size: dp(6), dp(21)
-                        radius: [dp(2)]
-            Label:
-                text: '[b]VÉRTIS[/b]'
-                markup: True
-                font_size: sp(22)
-                size_hint_x: None
-                width: self.texture_size[0]
-            Widget:
-            BotaoContorno:
-                text: 'Simular 1 mês >>'
-                font_size: sp(11)
-                size_hint: None, None
-                size: dp(118), dp(30)
-                pos_hint: {'center_y': .5}
-                disabled: root.ocupado
-                on_release: root.simular_mes()
-            BotaoContorno:
-                text: 'Sair'
-                font_size: sp(11)
-                size_hint: None, None
-                size: dp(44), dp(30)
-                pos_hint: {'center_y': .5}
-                on_release: app.sair()
-        # -------------------------------------------------- usuário e nível
-        BoxLayout:
-            size_hint_y: None
-            height: dp(56)
-            padding: dp(14), 0
-            spacing: dp(10)
-            Widget:
-                size_hint_x: None
-                width: dp(42)
-                canvas:
-                    Color:
-                        rgba: rgba(servidor.campo(root.dados, 'nivel', 'cor', padrao='#A78BFA'))
-                    Ellipse:
-                        pos: self.x, self.center_y - dp(21)
-                        size: dp(42), dp(42)
-                    Color:
-                        rgba: rgba('#2A1A5E')
-                    Ellipse:
-                        pos: self.x + dp(3), self.center_y - dp(18)
-                        size: dp(36), dp(36)
-                Label:
-                    text: root.iniciais
-                    bold: True
-                    font_size: sp(15)
-                    center: self.parent.center
+        ScrollView:
+            do_scroll_x: False
+            bar_width: dp(3)
             BoxLayout:
                 orientation: 'vertical'
-                padding: 0, dp(6)
-                Texto:
-                    text: root.linha_nome
-                    font_size: sp(14)
-                BarraProgresso:
-                    valor: root.fracao_xp
-                    cor: rgba(servidor.campo(root.dados, 'nivel', 'cor', padrao='#A78BFA'))
-                TextoPequeno:
-                    text: root.linha_xp
-                    font_size: sp(11)
-        # -------------------------------------------------- painel da trilha
-        FloatLayout:
-            padding: dp(10)
-            canvas.before:
-                Color:
-                    rgba: rgba('#1A0F3D', 0.85)
-                RoundedRectangle:
-                    pos: self.x + dp(10), self.y + dp(4)
-                    size: self.width - dp(20), self.height - dp(8)
-                    radius: [dp(20)]
-            TrilhaAscensao:
-                id: trilha
-                size_hint: None, None
-                pos: self.parent.x + dp(14), self.parent.y + dp(8)
-                size: self.parent.width - dp(28), self.parent.height - dp(16)
-            Chip:
-                pos_hint: {'x': 0.06, 'top': 0.95}
-                size: dp(150), dp(56)
-                MoedaGiratoria:
-                    size_hint_x: None
-                    width: dp(40)
+                size_hint_y: None
+                height: self.minimum_height
+                spacing: dp(12)
+                padding: 0, 0, 0, dp(18)
+                # ------------------------------------------ cabeçalho amarelo com o saldo
                 BoxLayout:
                     orientation: 'vertical'
-                    TextoPequeno:
-                        text: 'Pontos'
-                    Texto:
-                        text: '[b]' + servidor.milhar(servidor.campo(root.dados, 'pontos', padrao=0)) + '[/b] pts'
-                        font_size: sp(17)
-            Chip:
-                pos_hint: {'right': 0.95, 'top': 0.95}
-                size: dp(140), dp(52)
-                BoxLayout:
-                    orientation: 'vertical'
-                    TextoPequeno:
-                        text: 'Milhas'
-                    Texto:
-                        text: '[b]' + servidor.milhar(servidor.campo(root.dados, 'milhas', padrao=0)) + '[/b] mi'
-                        font_size: sp(17)
-            Chip:
-                pos_hint: {'right': 0.95, 'y': 0.42}
-                size: dp(168), dp(58)
-                opacity: 1 if root.beneficio else 0
-                cor_fundo: rgba('#F5B83D', 0.95)
-                cor_borda: rgba('#FFE29A', 1)
-                BoxLayout:
-                    orientation: 'vertical'
+                    size_hint_y: None
+                    height: dp(178)
+                    padding: dp(18), dp(14), dp(12), dp(18)
+                    spacing: dp(2)
+                    canvas.before:
+                        Color:
+                            rgba: rgba(CORES['amarelo'])
+                        RoundedRectangle:
+                            pos: self.pos
+                            size: self.size
+                            radius: [0, 0, dp(22), dp(22)]
+                    BoxLayout:
+                        size_hint_y: None
+                        height: dp(44)
+                        spacing: dp(12)
+                        Widget:
+                            size_hint_x: None
+                            width: dp(42)
+                            canvas:
+                                Color:
+                                    rgba: rgba(CORES['grafite'])
+                                Ellipse:
+                                    pos: self.x, self.center_y - dp(21)
+                                    size: dp(42), dp(42)
+                            Label:
+                                text: root.iniciais
+                                bold: True
+                                font_size: sp(15)
+                                color: rgba(CORES['amarelo'])
+                                center: self.parent.center
+                        BoxLayout:
+                            orientation: 'vertical'
+                            Label:
+                                text: '[b]' + root.saudacao + '[/b]'
+                                markup: True
+                                font_size: sp(16)
+                                color: rgba(CORES['texto'])
+                                text_size: self.size
+                                halign: 'left'
+                                valign: 'bottom'
+                            Label:
+                                text: root.linha_conta
+                                font_size: sp(11)
+                                color: rgba(CORES['grafite'], 0.75)
+                                text_size: self.size
+                                halign: 'left'
+                                valign: 'top'
+                        BotaoIcone:
+                            icone: 'sair'
+                            size_hint_x: None
+                            width: dp(40)
+                            on_release: app.sair()
+                    Widget:
                     Label:
-                        text: '[b]' + root.beneficio + '[/b]'
-                        markup: True
-                        color: rgba('#2A1460')
+                        text: 'Saldo em conta'
                         font_size: sp(13)
+                        color: rgba(CORES['grafite'], 0.8)
+                        size_hint_y: None
+                        height: dp(20)
                         text_size: self.size
+                        halign: 'left'
                         valign: 'middle'
-                    Label:
-                        text: '[b]LIBERADO![/b]'
-                        markup: True
-                        color: rgba('#7C2D12')
+                    BoxLayout:
+                        size_hint_y: None
+                        height: dp(42)
+                        spacing: dp(10)
+                        Label:
+                            text: '[b]' + (servidor.reais(servidor.campo(root.dados, 'saldo_conta', padrao=0)) if root.mostrar_saldo else 'R$  • • • • •') + '[/b]'
+                            markup: True
+                            font_size: sp(28)
+                            color: rgba(CORES['texto'])
+                            size_hint_x: None
+                            width: self.texture_size[0]
+                        BotaoIcone:
+                            icone: 'olho' if root.mostrar_saldo else 'olho_fechado'
+                            size_hint_x: None
+                            width: dp(30)
+                            on_release: root.mostrar_saldo = not root.mostrar_saldo
+                        Widget:
+                # ------------------------------------------ atalhos
+                GridLayout:
+                    cols: 4
+                    size_hint_y: None
+                    height: dp(86)
+                    padding: dp(8), 0
+                    AcaoRapida:
+                        icone: 'pix'
+                        texto: 'Pix'
+                        on_release: root.atalho_pix()
+                    AcaoRapida:
+                        icone: 'fatura'
+                        texto: 'Fatura'
+                        on_release: app.ir('cartao')
+                    AcaoRapida:
+                        icone: 'score'
+                        texto: 'Meu score'
+                        on_release: app.ir('score')
+                    AcaoRapida:
+                        icone: 'metas'
+                        texto: 'Metas'
+                        on_release: root.atalho_metas()
+                # ------------------------------------------ cartão de crédito
+                PainelToque:
+                    width: root.width - dp(32)
+                    on_release: app.ir('cartao')
+                    CabecalhoCartao:
+                        icone: 'cartao'
+                        titulo: 'Cartão de crédito'
+                        acao: 'Ver fatura'
+                    Widget:
+                        size_hint_y: None
+                        height: dp(4)
+                    TextoPequeno:
+                        text: 'Limite disponível'
+                    Texto:
+                        text: '[b]' + servidor.reais(servidor.campo(root.dados, 'limite', 'disponivel', padrao=0)) + '[/b]'
+                        font_size: sp(22)
+                    BarraProgresso:
+                        valor: root.fracao_disponivel
+                    TextoPequeno:
+                        text: 'Limite total: ' + servidor.reais(servidor.campo(root.dados, 'limite', 'total', padrao=0))
+                # ------------------------------------------ crédito progressivo (trilha)
+                PainelToque:
+                    width: root.width - dp(32)
+                    on_release: app.ir('score')
+                    CabecalhoCartao:
+                        icone: 'score'
+                        titulo: 'Crédito progressivo'
+                        acao: 'Score ' + str(servidor.campo(root.dados, 'score', padrao=0))
+                    TextoPequeno:
+                        text: 'Cada fatura paga em dia faz o seu limite subir.'
+                    TrilhaAscensao:
+                        id: trilha
+                        size_hint_y: None
+                        height: dp(150)
+                    BoxLayout:
+                        size_hint_y: None
+                        height: dp(34)
+                        padding: dp(10), 0
+                        canvas.before:
+                            Color:
+                                rgba: rgba(CORES['amarelo_suave'])
+                            RoundedRectangle:
+                                pos: self.pos
+                                size: self.size
+                                radius: [dp(8)]
+                        Label:
+                            text: root.linha_previsto
+                            markup: True
+                            font_size: sp(12)
+                            color: rgba(CORES['texto'])
+                            text_size: self.size
+                            halign: 'left'
+                            valign: 'middle'
+                # ------------------------------------------ Vértis Pontos
+                PainelToque:
+                    width: root.width - dp(32)
+                    spacing: dp(8)
+                    on_release: app.ir('conquistas')
+                    CabecalhoCartao:
+                        icone: 'pontos'
+                        titulo: 'Vértis Pontos'
+                        acao: 'Trocar'
+                    BoxLayout:
+                        size_hint_y: None
+                        height: dp(48)
+                        spacing: dp(12)
+                        MoedaGiratoria:
+                            size_hint_x: None
+                            width: dp(42)
+                        BoxLayout:
+                            orientation: 'vertical'
+                            Texto:
+                                text: '[b]' + servidor.milhar(servidor.campo(root.dados, 'pontos', padrao=0)) + '[/b] pontos'
+                                font_size: sp(17)
+                            TextoPequeno:
+                                text: servidor.milhar(servidor.campo(root.dados, 'milhas', padrao=0)) + ' milhas acumuladas'
+                    Texto:
+                        text: root.linha_nome
+                        font_size: sp(13)
+                    BarraProgresso:
+                        height: dp(6)
+                        valor: root.fracao_xp
+                    TextoPequeno:
+                        text: root.linha_xp
                         font_size: sp(11)
-                        text_size: self.size
-                        valign: 'middle'
-            Chip:
-                id: chip_credito
-                pos_hint: {'right': 0.95, 'y': 0.06}
-                size: dp(214), dp(66)
-                on_touch_down: app.ir('score') if self.collide_point(*args[1].pos) else None
-                AnelCredito:
-                    size_hint_x: None
-                    width: dp(50)
-                    fracao: root.fracao_disponivel
+                    BoxLayout:
+                        size_hint_y: None
+                        height: dp(40) if root.beneficio else 0
+                        opacity: 1 if root.beneficio else 0
+                        padding: dp(10), 0
+                        canvas.before:
+                            Color:
+                                rgba: rgba(CORES['grafite'])
+                            RoundedRectangle:
+                                pos: self.pos
+                                size: self.size
+                                radius: [dp(8)]
+                        Label:
+                            text: 'Benefício liberado: [b][color=#FFD24D]' + root.beneficio + '[/color][/b]'
+                            markup: True
+                            font_size: sp(12)
+                            color: 1, 1, 1, 1
+                            text_size: self.size
+                            halign: 'left'
+                            valign: 'middle'
+                    TextoPequeno:
+                        text: 'Próxima conquista: [b][color=#1F2329]' + root.proxima + '[/color][/b]'
+                    BoxLayout:
+                        id: medalhas
+                        size_hint_y: None
+                        height: dp(78)
+                        padding: dp(10), dp(4)
+                        spacing: dp(20)
+                # ------------------------------------------ modo apresentação
                 BoxLayout:
                     orientation: 'vertical'
+                    size_hint: None, None
+                    width: root.width - dp(32)
+                    pos_hint: {'center_x': .5}
+                    height: self.minimum_height
+                    spacing: dp(6)
                     TextoPequeno:
-                        text: 'Crédito Progressivo  >'
-                    Texto:
-                        text: 'Limite: [b]' + servidor.reais_curto(servidor.campo(root.dados, 'limite', 'total', padrao=0)) + '[/b]'
-                        font_size: sp(15)
-                    BarraProgresso:
-                        height: dp(5)
-                        valor: root.fracao_previsto
-                        cor: rgba(CORES['rosa'])
-                    TextoPequeno:
-                        text: root.linha_previsto
-                        font_size: sp(10)
-        # -------------------------------------------------- próxima conquista
-        Painel:
-            size_hint_y: None
-            height: dp(56)
-            padding: dp(14), dp(6)
-            spacing: 0
-            orientation: 'vertical'
-            TextoPequeno:
-                text: 'Próxima Conquista:'
-                halign: 'center'
-            Texto:
-                text: '[b][color=#FFE29A]' + root.proxima + '[/color][/b]'
-                halign: 'center'
-                font_size: sp(16)
-        # -------------------------------------------------- medalhas
-        BoxLayout:
-            id: medalhas
-            size_hint_y: None
-            height: dp(82)
-            padding: dp(24), dp(4)
-            spacing: dp(24)
+                        text: 'Modo apresentação: avança o relógio 30 dias (salário, compras e fatura paga em dia).'
+                        font_size: sp(11)
+                    BotaoContorno:
+                        text: 'Simular 1 mês de uso'
+                        disabled: root.ocupado
+                        opacity: 0.5 if root.ocupado else 1
+                        on_release: root.simular_mes()
         BarraNavegacao:
             atual: 'inicio'
 """)
@@ -255,6 +343,9 @@ class TelaInicio(TelaVertis):
     fracao_disponivel = NumericProperty(0)
     fracao_previsto = NumericProperty(0)
     ocupado = BooleanProperty(False)
+    mostrar_saldo = BooleanProperty(True)
+    saudacao = StringProperty("Olá!")
+    linha_conta = StringProperty("")
 
     def on_pre_enter(self, *_):
         self.carregar()
@@ -270,7 +361,9 @@ class TelaInicio(TelaVertis):
         nivel = r["nivel"]
         partes = r["nome"].split()
         self.iniciais = (partes[0][0] + (partes[-1][0] if len(partes) > 1 else "")).upper()
-        self.linha_nome = f"[b]{r['nome']}[/b]  •  [color=#A78BFA]Nível {nivel['ordem']} ({nivel['nome']})[/color]"
+        self.saudacao = f"Olá, {partes[0].capitalize()}"
+        self.linha_conta = f"Ag/Conta {r.get('conta', '')}"
+        self.linha_nome = f"Nível {nivel['ordem']}: [b]{nivel['nome']}[/b]"
         if nivel["xp_proximo_nivel"]:
             faixa = nivel["xp_proximo_nivel"] - nivel["xp_nivel_atual"]
             self.fracao_xp = (nivel["xp_total"] - nivel["xp_nivel_atual"]) / max(1, faixa)
@@ -282,8 +375,8 @@ class TelaInicio(TelaVertis):
         total, disp, prev = float(lim["total"]), float(lim["disponivel"]), float(lim["previsto"] or lim["total"])
         self.fracao_disponivel = disp / total if total else 0
         self.fracao_previsto = total / prev if prev else 1
-        self.linha_previsto = (f"Próximo: {servidor.reais_curto(prev)} pagando em dia" if prev > total
-                               else f"Disponível: {servidor.reais_curto(disp)}")
+        self.linha_previsto = (f"Próximo limite previsto: [b]{servidor.reais_curto(prev)}[/b] pagando em dia"
+                               if prev > total else f"Limite atual: [b]{servidor.reais_curto(total)}[/b]")
         self.beneficio = r["beneficios"][0]["nome"] if r["beneficios"] else ""
         pc = r.get("proxima_conquista")
         self.proxima = (f"{pc['nome']}  ({pc['progresso_atual']}/{pc['criterio_quantidade']})"
@@ -302,6 +395,16 @@ class TelaInicio(TelaVertis):
                                                    rotulo=c["nome"]))
         for _ in range(3 - len(recentes[:3])):
             caixa.add_widget(Factory.MedalhaRotulo(ativa=False, rotulo="Em breve"))
+
+    def atalho_pix(self):
+        app = App.get_running_app()
+        app.ir("conta")
+        app.root.get_screen("conta").enviar_pix()
+
+    def atalho_metas(self):
+        app = App.get_running_app()
+        app.ir("conta")
+        app.root.get_screen("conta").metas()
 
     def simular_mes(self):
         self.ocupado = True

@@ -19,7 +19,7 @@ CHAVE_TOKEN = os.environ.get("VERTIS_CHAVE_TOKEN", "troque-esta-chave-no-projeto
 HORAS_VALIDADE_TOKEN = 12
 
 # --- Parâmetros do negócio que não ficam no banco ------------------------
-VERSAO_MODELO_SCORE = "v1.0"
+VERSAO_MODELO_SCORE = "v2.0"
 DIA_VENCIMENTO_PADRAO = 10          # dia do mês em que a fatura vence
 DIAS_ANTES_FECHAMENTO = 7           # a fatura fecha 7 dias antes do vencimento
 PONTOS_POR_REAL_CASHBACK = 100      # 100 pontos = R$ 1,00
